@@ -14,10 +14,14 @@ with open(track_file_path, 'rb') as track_file:
 compressed_start_bytes = b'\x5d\x00\x00\x02'
 compressed_start_index = track_content.find(compressed_start_bytes)
 
+# Header end bytes for detecting where the original track header ends
+track_header_end = b'\x48\x45\x4E\x44\x00'
+
 # If index was found file is compressed
 if compressed_start_index >= 0:
     # Separate track header and data
     track_header = track_content[:compressed_start_index]
+    track_header += track_header_end
     track_data = track_content[compressed_start_index:]
 
     # Compression header should contain uncompressed size as 64 bit integer, file has it as 32 bit integer
@@ -34,21 +38,22 @@ if compressed_start_index >= 0:
         track_file_uncompressed.write(track_content_uncompressed)
 
 else:
-    # Track file ends with the compression algorithm name
-    header_end_bytes = b'LZMA'
-    decompressed_start_index = track_content.find(header_end_bytes)
+    # Track file header ends with the compression algorithm name
+    decompressed_start_index = track_content.find(track_header_end)
 
     if decompressed_start_index >= 0:
         # Get the index of the uncompressed track data start
-        decompressed_start_index += len(header_end_bytes)
+        decompressed_start_index += len(track_header_end)
 
         # Separate track header and data
-        track_header = track_content[:decompressed_start_index]
+        track_header = track_content[:decompressed_start_index - len(track_header_end)]
         track_data = track_content[decompressed_start_index:]
 
         # Compress track data
         compression_filters = [{'id': lzma.FILTER_LZMA1, 'dict_size': 0x0020000}]
-        track_data_compressed = bytearray(lzma.compress(track_data, format=lzma.FORMAT_ALONE, filters=compression_filters))
+        track_data_compressed = bytearray(lzma.compress(track_data,
+                                                        format=lzma.FORMAT_ALONE,
+                                                        filters=compression_filters))
 
         # Add uncompressed size to compression header
         track_uncompressed_len = len(track_data).to_bytes(length=4, byteorder='little')
