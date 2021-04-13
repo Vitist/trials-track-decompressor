@@ -3,6 +3,9 @@ import os
 import lzma
 
 # Get the track file path from parameters
+if len(sys.argv) < 2:
+    print("No parameters given")
+    sys.exit(1)
 track_file_path = sys.argv[1]
 track_dir_path = os.path.dirname(sys.argv[1])
 
