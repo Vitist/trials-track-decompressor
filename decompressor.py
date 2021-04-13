@@ -10,9 +10,13 @@ track_dir_path = os.path.dirname(sys.argv[1])
 with open(track_file_path, 'rb') as track_file:
     track_content = bytearray(track_file.read())
 
+start_bytes_max_index = 200
+if len(track_content) < start_bytes_max_index:
+    start_bytes_max_index = len(track_content)
+
 # Find the start of the compressed section of the file
 compressed_start_bytes = b'\x5d\x00\x00\x02'
-compressed_start_index = track_content.find(compressed_start_bytes)
+compressed_start_index = track_content[:200].find(compressed_start_bytes)
 
 # Header end bytes for detecting where the original track header ends
 track_header_end = b'\x48\x45\x4E\x44\x00'
@@ -39,7 +43,7 @@ if compressed_start_index >= 0:
 
 else:
     # Track file header ends with the compression algorithm name
-    decompressed_start_index = track_content.find(track_header_end)
+    decompressed_start_index = track_content[:200].find(track_header_end)
 
     if decompressed_start_index >= 0:
         # Get the index of the uncompressed track data start
