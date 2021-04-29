@@ -87,3 +87,7 @@ dist/
 build/
 decompressor.spec
 __pycache__/
+
+*.trk
+*.rep
+*.exe
